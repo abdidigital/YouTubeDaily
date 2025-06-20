@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // TAPI PASTIKAN UNTUK MENGAMANKANNYA DI GOOGLE CLOUD CONSOLE dengan membatasi
     // penggunaannya hanya untuk domain hosting Anda atau IP server backend Anda.
     // =================================================================================
-    const YOUTUBE_API_KEY = 'AIzaSyAkgcQAn-vxpxp2UoPZ2zQLKwfVNLWRtl0'; // <-- SANGAT TIDAK AMAN, HANYA UNTUK DEV
+    const YOUTUBE_API_KEY = 'AIzaSyAo0VMBnd4QL90ZJN7pIEakOhPY1MovE-M'; // <-- SANGAT TIDAK AMAN, HANYA UNTUK DEV
 
     // Selektor Elemen DOM
     const searchButton = document.getElementById('searchButton');
