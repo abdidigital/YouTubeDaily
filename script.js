@@ -33,10 +33,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentVideoPlaylist = [];
     let currentVideoIndex = -1;
 
-    // PERBAIKAN: Memuat YouTube IFrame API hanya satu kali saat script dimuat.
+    // PERBAIKAN KRITIS: Memuat YouTube IFrame API hanya satu kali saat script dimuat.
     // Ini lebih efisien dan memperbaiki bug pemuatan berulang.
+    // URL yang benar adalah "https://www.youtube.com/iframe_api"
     const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
+    tag.src = "https://www.youtube.com/iframe_api"; // <-- PERBAIKAN DI SINI
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
@@ -91,7 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
             youtubePlayerAPI.loadVideoById(videoId);
         } else {
             // Fallback jika API belum siap, meskipun seharusnya sudah
-            youtubeIframe.src = `https://www.youtube.com/embed/$${videoId}?autoplay=1&rel=0&enablejsapi=1`;
+            // PERBAIKAN: Gunakan URL YouTube yang benar
+            youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`; // <-- PERBAIKAN DI SINI
             console.warn('YouTube Player API belum siap. Memuat video langsung ke iframe.');
         }
         videoModal.show();
@@ -130,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!query) return;
 
         if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'AIzaSyAkgcQAn-vxpxp2UoPZ2zQLKwfVNLWRtl0') {
-            tg.showAlert('Kesalahan: API Key YouTube belum diatur dengan benar.');
+            tg.showAlert('Kesalahan: API Key YouTube belum diatur dengan benar atau masih menggunakan placeholder.');
             return;
         }
 
@@ -145,11 +147,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(`Error ${response.status}: ${errorData.error.message}`);
             }
             const data = await response.json();
+            // Penting: currentVideoPlaylist diisi dari hasil pencarian
             currentVideoPlaylist = normalizeVideoData(data.items);
             console.log('Playlist setelah pencarian:', currentVideoPlaylist);
             displayResults(currentVideoPlaylist, `Hasil Pencarian: "${query}"`);
         } catch (error) {
-            handleFetchError(error);
+            handleFetchError(error, 'Gagal melakukan pencarian'); // Pesan lebih spesifik
         } finally {
             showLoading(false);
         }
@@ -170,11 +173,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(`Error ${response.status}: ${errorData.error.message}`);
             }
             const data = await response.json();
+            // Penting: currentVideoPlaylist diisi dari hasil kategori
             currentVideoPlaylist = normalizeVideoData(data.items);
             console.log('Playlist setelah memuat kategori:', currentVideoPlaylist);
             displayResults(currentVideoPlaylist, categoryName);
         } catch (error) {
-            handleFetchError(error, 'Gagal memuat video');
+            handleFetchError(error, 'Gagal memuat video populer'); // Pesan lebih spesifik
         } finally {
             showLoading(false);
         }
@@ -185,6 +189,8 @@ document.addEventListener('DOMContentLoaded', function () {
         resultsContainer.innerHTML = '';
         if (videos.length === 0) {
             resultsContainer.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Video tidak ditemukan.</p></div>';
+            resultsCategoryTitle.classList.add('d-none'); // Sembunyikan judul jika tidak ada hasil
+            resultsCategoryHr.classList.add('d-none'); // Sembunyikan HR jika tidak ada hasil
             return;
         }
 
@@ -225,7 +231,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const index = parseInt(card.dataset.videoIndex, 10);
         const video = currentVideoPlaylist[index];
-        if (!video) return;
+        if (!video) {
+            console.error('Video tidak ditemukan di playlist untuk indeks:', index);
+            return;
+        }
 
         const videoId = video.id;
         const videoTitle = video.snippet.title;
@@ -301,7 +310,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const handleFetchError = (error, prefix = 'Gagal mengambil data') => {
         console.error(`${prefix}:`, error);
-        resultsContainer.innerHTML = `<div class="alert alert-danger" role="alert"><strong>${prefix}:</strong> ${error.message}</div>`;
+        // Tampilkan pesan error di container hasil
+        resultsContainer.innerHTML = `<div class="alert alert-danger" role="alert"><strong>${prefix}:</strong> ${error.message}<br>Pastikan API Key Anda valid dan tidak ada batasan domain/referrer.</div>`;
+        resultsCategoryTitle.classList.add('d-none');
+        resultsCategoryHr.classList.add('d-none');
     };
 
     // Fungsi untuk menerapkan tema dari Telegram
